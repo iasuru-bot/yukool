@@ -15,7 +15,7 @@ import java.util.UUID;
 public class Categorie {
 
     @Id
-    private UUID id;
+    private String id;
 
     private String nom;
 }

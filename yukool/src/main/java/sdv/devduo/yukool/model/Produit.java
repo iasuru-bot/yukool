@@ -16,7 +16,7 @@ import java.util.UUID;
 @Document(collection = "produits")
 public class Produit {
     @Id
-    private UUID id;
+    private String id;
 
     private String nom;
     private String nutriScore;

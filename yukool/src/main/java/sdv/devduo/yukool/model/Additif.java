@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +16,7 @@ import java.util.UUID;
 public class Additif {
 
     @Id
-    private UUID id;
+    private String id;
 
     private String nom;
 

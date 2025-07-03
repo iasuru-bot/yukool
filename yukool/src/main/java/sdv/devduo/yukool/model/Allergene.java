@@ -14,7 +14,7 @@ import java.util.UUID;
 @Document(collection = "allergenes")
 public class Allergene {
     @Id
-    private UUID id;
+    private String id;
 
     private String nom;
 
