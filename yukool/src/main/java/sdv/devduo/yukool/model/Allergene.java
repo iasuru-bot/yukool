@@ -6,13 +6,15 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "allergenes")
 public class Allergene {
     @Id
-    private String id;
+    private UUID id;
 
     private String nom;
 
