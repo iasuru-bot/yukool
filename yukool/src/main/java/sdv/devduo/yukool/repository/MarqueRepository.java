@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface MarqueRepository extends MongoRepository<Marque, String> {
     Optional<Marque> findByNom(String nom);
+    Optional<Marque> findByNomIgnoreCase(String nom);
 }
