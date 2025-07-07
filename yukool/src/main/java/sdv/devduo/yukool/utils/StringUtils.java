@@ -46,31 +46,12 @@ public  class StringUtils {
     /**
      *
      * @param s
-     * @param charactersSeparateurs
      * @return
      */
-    static public String cleanString(String s, List<Character> charactersSeparateurs) {
+    static public String cleanString(String s) {
         if (s == null) return null;
-
         // Suppression des caractères spéciaux
         s = s.replaceAll("[*_]", "");
-
-        // Suppression du contenu entre parenthèses et des pourcentages
-        s = s.replaceAll("\\([^)]*\\)", "").replaceAll("\\s*\\d+[\\d.,]*\\s*%", "");
-
-        // Suppression des préfixes type "Nom: valeur"
-        s = s.replaceAll("\\b[^\\d\\W]\\w*\\s*:\\s*", "");
-
-        // Remplacement des séparateurs personnalisés
-        if (charactersSeparateurs != null && !charactersSeparateurs.isEmpty()) {
-            for (Character sep : charactersSeparateurs) {
-                // Échappe les caractères spéciaux regex comme '|'
-                String escaped = Pattern.quote(String.valueOf(sep));
-                s = s.replaceAll(escaped, ",");
-            }
-        }
-
-        s = s.replaceAll(",+", ",").replaceAll("^,|,$", "");
 
         return s.toLowerCase().trim();
     }

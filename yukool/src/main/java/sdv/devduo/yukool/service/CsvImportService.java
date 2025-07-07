@@ -8,10 +8,7 @@ import sdv.devduo.yukool.model.*;
 import sdv.devduo.yukool.repository.*;
 import sdv.devduo.yukool.utils.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class CsvImportService {
+public class CsvImportService implements ProduitService{
 
 
     /** */
@@ -35,16 +32,6 @@ public class CsvImportService {
     /** */
     private final ProduitRepository produitRepository;
 
-    private List<ProduitRaw> produitRaws = new ArrayList<>();
-
-    /** Index => liste de caractères à nettoyer/remplacer*/
-    private Map<Integer, List<Character>> columnSeparators = Map.of(
-            0, List.of(','),
-            1, List.of(','),
-            4, List.of(',',';','-'),
-            28, List.of(','),
-            29, List.of(',')
-    );
 
     @Autowired
     public CsvImportService(MarqueRepository marqueRepository, CategorieRepository categorieRepository, IngredientRepository ingredientRepository, AdditifRepository additifRepository, AllergeneRepository allergeneRepository, ProduitRepository produitRepository) {
@@ -56,42 +43,14 @@ public class CsvImportService {
         this.produitRepository = produitRepository;
     }
 
-    /**
-     *
-     * @param csvPath
-     * @throws Exception
-     */
-    public void importCsv(String csvPath) throws Exception {
-        try (BufferedReader br = new BufferedReader(new FileReader(csvPath))) {
-            String header = br.readLine(); // skip header
-            String line;
-            while ((line = br.readLine()) != null) {
-                produitRaws.add(parseLineToProductRaw(line));
-            }
-            transformAndPersist();
-        }
-    }
 
-    /**
-     *
-     * @param line
-     * @return
-     */
-    private ProduitRaw parseLineToProductRaw(String line) {
-        String[] parts = line.split("\\|", -1);
-        if (parts.length < 30) return null;
-        for (int i = 0; i < parts.length; i++) {
-            List<Character> separators = columnSeparators.getOrDefault(i, List.of());
-            parts[i] = StringUtils.cleanString(parts[i], separators);
-        }
-        ProduitRaw raw = new ProduitRaw(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[9], parts[10], parts[11], parts[12], parts[13], parts[14], parts[15], parts[16], parts[17], parts[18], parts[19], parts[20], parts[21], parts[22], parts[23], parts[24], parts[25], parts[26], parts[27], parts[28], parts[29]);
-        return raw;
-    }
 
     /**
      *
      */
-    private void transformAndPersist() {
+    @Override
+    public void saveAllProduit(List<ProduitRaw> produitRaws) {
+
         // Récupère les marques déjà en base
         List<Marque> savedMarques = marqueRepository.findAll();
         Set<String> MarquesExistants = savedMarques.stream()
@@ -102,10 +61,7 @@ public class CsvImportService {
         List<Marque> marques = produitRaws.stream()
                 .map(ProduitRaw::marque)
                 .filter(Objects::nonNull)
-                .flatMap(m -> Arrays.stream(m.split(",")))
-                .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .map(String::toLowerCase)
                 .distinct()
                 .filter(nom -> !MarquesExistants.contains(nom))
                 .map(nom -> new Marque(nom, nom))
@@ -124,9 +80,7 @@ public class CsvImportService {
         List<Categorie> categories = produitRaws.stream()
                 .map(ProduitRaw::categorie)
                 .filter(Objects::nonNull)
-                .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .map(String::toLowerCase)
                 .distinct()
                 .filter(nom -> !CategsExistants.contains(nom))
                 .map(nom -> new Categorie(nom, nom))
@@ -145,10 +99,8 @@ public class CsvImportService {
         List<Allergene> allergenes = produitRaws.stream()
                 .map(ProduitRaw::allergenes)
                 .filter(Objects::nonNull)
-                .flatMap(m -> Arrays.stream(m.split(",")))
-                .map(String::trim)
+                .flatMap(List::stream)
                 .filter(s -> !s.isEmpty())
-                .map(String::toLowerCase)
                 .distinct()
                 .filter(nom -> !AllergeneExistants.contains(nom))
                 .map(nom -> new Allergene(nom, nom))
@@ -159,25 +111,16 @@ public class CsvImportService {
 
         //recup les existants en base
         List<Additif> savedAdditifs = additifRepository.findAll();
-        Set<String> AdditifsExistants = savedAdditifs.stream()
+        Set<String> additifsExistants = savedAdditifs.stream()
                 .map(a -> a.getCode().toLowerCase().trim())
                 .collect(Collectors.toSet());
 
         List<Additif> additifs = produitRaws.stream()
-                .map(ProduitRaw::additifs)
-                .filter(Objects::nonNull)
-                .flatMap(a -> Arrays.stream(a.split(",")))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .distinct()
-                .map(s -> {
-                    String[] parts = s.split(" - ", 2);
-                    String code = parts[0].trim().toLowerCase();
-                    String nom = parts.length > 1 ? parts[1].trim() : "";
-                    return new Additif(nom, code, nom);
-                })
-                .filter(a -> !AdditifsExistants.contains(a.getCode()))
+                .flatMap(produitRaw -> produitRaw.additifs().entrySet().stream())
+                .map(entry -> new Additif(entry.getKey(), entry.getValue(),entry.getKey()))
+                .filter(additif -> !additifsExistants.contains(additif.getCode().toLowerCase().trim()))
                 .toList();
+
 
         additifRepository.saveAll(additifs);
 
@@ -192,10 +135,8 @@ public class CsvImportService {
         List<Ingredient> ingredients = produitRaws.stream()
                 .map(ProduitRaw::ingredients)
                 .filter(Objects::nonNull)
-                .flatMap(s -> Arrays.stream(s.split("[,]")))
-                .map(String::trim)
-                .filter(s -> s != null && !s.isEmpty())
-                .map(String::toLowerCase)
+                .flatMap(List::stream)
+                .filter(s -> !s.isEmpty())
                 .distinct()
                 .filter(nom -> !ingredientsExistants.contains(nom))
                 .map(nom -> new Ingredient(nom, nom))
@@ -205,15 +146,9 @@ public class CsvImportService {
 
         List<Produit> produits = produitRaws.stream()
                 .map(raw -> toProduit(raw, marques, categories, additifs, allergenes, ingredients))
-                .filter(Objects::nonNull)
                 .toList();
 
         produitRepository.saveAll(produits);
-
-        List<Produit> savedPro = produitRepository.findAll();
-        for (Produit p : savedPro) {
-            log.error(p.toString());
-        }
 
     }
 
@@ -243,21 +178,20 @@ public class CsvImportService {
                 .filter(c -> c.getId().equalsIgnoreCase(raw.categorie()))
                 .findFirst().orElse(null);
 
-        List<Additif> additifs = StringUtils.parseList(raw.additifs(), ",").stream()
-                .map(code -> allAdditifs.stream()
-                        .filter(a -> a.getCode().equalsIgnoreCase(code))
-                        .findFirst().orElse(null))
-                .filter(Objects::nonNull)
-                .toList();
-
-        List<Allergene> allergenes = StringUtils.parseList(raw.allergenes(), ",").stream()
+        List<Additif> additifs = new ArrayList<>();
+        for (Map.Entry<String, String> entry : raw.additifs().entrySet()) {
+            additifs.add(allAdditifs.stream()
+                    .filter(a -> a.getCode().equalsIgnoreCase(entry.getKey()))
+                    .findFirst().orElse(null));
+        }
+        List<Allergene> allergenes = raw.allergenes().stream()
                 .map(id -> allAllergenes.stream()
                         .filter(a -> a.getNom().equalsIgnoreCase(id))
                         .findFirst().orElse(null))
                 .filter(Objects::nonNull)
                 .toList();
 
-        List<Ingredient> ingredients = StringUtils.parseList(raw.ingredients(), ",").stream()
+        List<Ingredient> ingredients = raw.ingredients().stream()
                 .map(nom -> allIngredients.stream()
                         .filter(i -> i.getNom().equalsIgnoreCase(nom))
                         .findFirst().orElse(null))
@@ -267,7 +201,7 @@ public class CsvImportService {
         return new Produit(
                 UUID.randomUUID().toString(),
                 raw.nom(),
-                raw.nutritionGradeFr(),
+                NutritionGradeFr.fromString(raw.nutritionGradeFr()),
 
                 StringUtils.parseFloat(raw.energie100g()),
                 StringUtils.parseFloat(raw.graisse100g()),

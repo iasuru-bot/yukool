@@ -19,7 +19,7 @@ public class Produit {
     private String id;
 
     private String nom;
-    private String nutriScore;
+    private NutritionGradeFr nutriScore;
 
     private Float energie100g;
     private Float graisse100g;
