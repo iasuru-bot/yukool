@@ -1,11 +1,12 @@
 package sdv.devduo.yukool.dto;
 
+import sdv.devduo.yukool.model.NutritionGradeFr;
 
 import java.util.HashMap;
 import java.util.List;
 
 /**
- *  DTO représentant une ligne du CSV d'import
+ *  DTO représentant {@link sdv.devduo.yukool.model.Produit}
  * @param categorie categorie du produit
  * @param marque marque du produit
  * @param nom nom du produit
@@ -37,9 +38,9 @@ import java.util.List;
  * @param allergenes allergenes du produit
  * @param additifs additifs du produit
  */
-public record ProduitRaw(String categorie, String marque, String nom, String nutritionGradeFr, List<String> ingredients, String energie100g
-        , String graisse100g, String sucres100g, String fibres100g, String proteines100g, String sel100g, String vitA100g
-        , String vitD100g, String vitE100g, String vitK100g, String vitC100g, String vitB1100g, String vitB2100g, String vitPP100g
-        , String vitB6100g, String vitB9100g, String vitB12100g, String calcium100g, String magnesium100g, String iron100g
-        , String fer100g, String betaCarotene100g, String presenceHuilePalme, List<String> allergenes, HashMap<String,String> additifs) {
+public record ProduitDTO(String categorie, String marque, String nom, NutritionGradeFr nutritionGradeFr, List<String> ingredients, Float energie100g
+        , Float graisse100g, Float sucres100g, Float fibres100g, Float proteines100g, Float sel100g, Float vitA100g
+        , Float vitD100g, Float vitE100g,  Float vitC100g,Float vitK100g, Float vitB1100g, Float vitB2100g, Float vitPP100g
+        , Float vitB6100g, Float vitB9100g, Float vitB12100g, Float calcium100g, Float magnesium100g, Float iron100g
+        , Float fer100g, Float betaCarotene100g, boolean presenceHuilePalme, List<String> allergenes, List<String> additifs) {
 }

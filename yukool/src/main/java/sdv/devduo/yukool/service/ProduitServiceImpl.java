@@ -8,39 +8,35 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationExpression;
-import org.springframework.data.mongodb.core.aggregation.AggregationSpELExpression;
 import org.springframework.stereotype.Service;
-import sdv.devduo.yukool.dto.ProduitRaw;
+import sdv.devduo.yukool.dto.*;
+import sdv.devduo.yukool.mapper.ProduitDTOMapper;
 import sdv.devduo.yukool.model.*;
 import sdv.devduo.yukool.repository.*;
 import sdv.devduo.yukool.utils.StringUtils;
-import com.mongodb.DBRef;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- *
+ * Implémentation du service {@link ProduitService}
  */
 @Slf4j
 @Service
-public class ProduitServiceImpl implements ProduitService{
+public class ProduitServiceImpl implements ProduitService {
 
 
-    /** */
     private final MarqueRepository marqueRepository;
-    /** */
+
     private final CategorieRepository categorieRepository;
-    /** */
+
     private final IngredientRepository ingredientRepository;
-    /** */
+
     private final AdditifRepository additifRepository;
-    /** */
+
     private final AllergeneRepository allergeneRepository;
-    /** */
+
     private final ProduitRepository produitRepository;
     private final MongoTemplate mongoTemplate;
 
@@ -56,11 +52,6 @@ public class ProduitServiceImpl implements ProduitService{
         this.mongoTemplate = mongoTemplate;
     }
 
-
-
-    /**
-     *
-     */
     @Override
     public void saveAllProduit(List<ProduitRaw> produitRaws) {
 
@@ -71,14 +62,14 @@ public class ProduitServiceImpl implements ProduitService{
                 .collect(Collectors.toSet());
 
         // Marques à sauvegarder : uniquement les nouvelles
-        List<Marque> marques = produitRaws.stream()
+        Set<Marque> marques = produitRaws.stream()
                 .map(ProduitRaw::marque)
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
                 .distinct()
                 .filter(nom -> !MarquesExistants.contains(nom))
-                .map(nom -> new Marque(nom, nom))
-                .toList();
+                .map(nom -> new Marque(UUID.randomUUID().toString(), nom))
+                .collect(Collectors.toSet());
 
         marqueRepository.saveAll(marques);
 
@@ -90,14 +81,14 @@ public class ProduitServiceImpl implements ProduitService{
                 .collect(Collectors.toSet());
 
         // Catégories à sauvegarder : uniquement les nouvelles
-        List<Categorie> categories = produitRaws.stream()
+        Set<Categorie> categories = produitRaws.stream()
                 .map(ProduitRaw::categorie)
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
                 .distinct()
                 .filter(nom -> !CategsExistants.contains(nom))
-                .map(nom -> new Categorie(nom, nom))
-                .toList();
+                .map(nom -> new Categorie(UUID.randomUUID().toString(), nom))
+                .collect(Collectors.toSet());
 
         categorieRepository.saveAll(categories);
 
@@ -116,10 +107,11 @@ public class ProduitServiceImpl implements ProduitService{
                 .filter(s -> !s.isEmpty())
                 .distinct()
                 .filter(nom -> !AllergeneExistants.contains(nom))
-                .map(nom -> new Allergene(nom, nom))
+                .map(nom -> new Allergene(UUID.randomUUID().toString(), nom.trim()))
                 .toList();
 
         allergeneRepository.saveAll(allergenes);
+
 
 
         //recup les existants en base
@@ -128,13 +120,11 @@ public class ProduitServiceImpl implements ProduitService{
                 .map(a -> a.getCode().toLowerCase().trim())
                 .collect(Collectors.toSet());
 
-        List<Additif> additifs = produitRaws.stream()
+        Set<Additif> additifs = produitRaws.stream()
                 .flatMap(produitRaw -> produitRaw.additifs().entrySet().stream())
-                .map(entry -> new Additif(entry.getKey(), entry.getValue(),entry.getKey()))
+                .map(entry -> new Additif(UUID.randomUUID().toString(), entry.getValue(), entry.getKey()))
                 .filter(additif -> !additifsExistants.contains(additif.getCode().toLowerCase().trim()))
-                .toList();
-
-
+                .collect(Collectors.toSet());
         additifRepository.saveAll(additifs);
 
 
@@ -152,13 +142,22 @@ public class ProduitServiceImpl implements ProduitService{
                 .filter(s -> !s.isEmpty())
                 .distinct()
                 .filter(nom -> !ingredientsExistants.contains(nom))
-                .map(nom -> new Ingredient(nom, nom))
+                .map(nom -> new Ingredient(
+                        UUID.randomUUID().toString(), nom.trim()))
                 .toList();
 
         ingredientRepository.saveAll(ingredients);
 
+
+        // get all marques , categories ,additifs et allergenes ,et ingredients
+        List<Marque> allMarques = marqueRepository.findAll();
+        List<Categorie> allCategorie = categorieRepository.findAll();
+        List<Additif> allAdditif = additifRepository.findAll();
+        List<Allergene> allAllergene = allergeneRepository.findAll();
+        List<Ingredient> allIngredient = ingredientRepository.findAll();
+
         List<Produit> produits = produitRaws.stream()
-                .map(raw -> toProduit(raw, marques, categories, additifs, allergenes, ingredients))
+                .map(raw -> toProduit(raw, allMarques, allCategorie, allAdditif, allAllergene, allIngredient))
                 .toList();
 
         produitRepository.saveAll(produits);
@@ -166,50 +165,64 @@ public class ProduitServiceImpl implements ProduitService{
     }
 
     /**
-     *
-     * @param raw
-     * @param allMarques
-     * @param allCategories
-     * @param allAdditifs
-     * @param allAllergenes
-     * @param allIngredients
-     * @return
+     * Fonction pour passer d'un {@link ProduitRaw} à un {@link  Produit}
+     * @param raw le produitRaw
+     * @param allMarques toutes les marques
+     * @param allCategories toutes les categories
+     * @param allAdditifs tous les additifs
+     * @param allAllergenes tous les allergenes
+     * @param allIngredients tous les ingrédients
+     * @return le produit
      */
     private Produit toProduit(ProduitRaw raw,
-                             List<Marque> allMarques,
-                             List<Categorie> allCategories,
-                             List<Additif> allAdditifs,
-                             List<Allergene> allAllergenes,
-                             List<Ingredient> allIngredients) {
+                              List<Marque> allMarques,
+                              List<Categorie> allCategories,
+                              List<Additif> allAdditifs,
+                              List<Allergene> allAllergenes,
+                              List<Ingredient> allIngredients) {
 
-
+        // Marque
         Marque marque = allMarques.stream()
-                .filter(m -> m.getId().equalsIgnoreCase(raw.marque()))
+                .filter(m -> m.getNom().equalsIgnoreCase(raw.marque()))
                 .findFirst().orElse(null);
 
+        // Categorie
         Categorie categorie = allCategories.stream()
-                .filter(c -> c.getId().equalsIgnoreCase(raw.categorie()))
+                .filter(c -> c.getNom().equalsIgnoreCase(raw.categorie()))
                 .findFirst().orElse(null);
 
-        List<Additif> additifs = new ArrayList<>();
-        for (Map.Entry<String, String> entry : raw.additifs().entrySet()) {
-            additifs.add(allAdditifs.stream()
-                    .filter(a -> a.getCode().equalsIgnoreCase(entry.getKey()))
-                    .findFirst().orElse(null));
-        }
-        List<Allergene> allergenes = raw.allergenes().stream()
-                .map(id -> allAllergenes.stream()
-                        .filter(a -> a.getNom().equalsIgnoreCase(id))
-                        .findFirst().orElse(null))
+        // Additifs
+        List<String> additifsIds = raw.additifs().keySet().stream()
+                .map(s -> allAdditifs.stream()
+                        .filter(a -> a.getCode().equalsIgnoreCase(s))
+                        .findFirst()
+                        .map(Additif::getId)
+                        .orElse(null))
                 .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        // Allergènes
+        List<String> allergenesIds = raw.allergenes().stream()
+                .map(nom -> allAllergenes.stream()
+                        .filter(a -> a.getNom().equalsIgnoreCase(nom.trim().toLowerCase()))
+                        .findFirst()
+                        .map(Allergene::getId)
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
 
-        List<Ingredient> ingredients = raw.ingredients().stream()
+        // Ingredients
+        List<String> ingredientsIds = raw.ingredients().stream()
                 .map(nom -> allIngredients.stream()
-                        .filter(i -> i.getNom().equalsIgnoreCase(nom))
-                        .findFirst().orElse(null))
+                        .filter(i -> i.getNom().equalsIgnoreCase(nom.trim().toLowerCase()))
+                        .findFirst()
+                        .map(Ingredient::getId)
+                        .orElse(null))
                 .filter(Objects::nonNull)
+                .distinct()
                 .toList();
+
 
         return new Produit(
                 UUID.randomUUID().toString(),
@@ -227,6 +240,7 @@ public class ProduitServiceImpl implements ProduitService{
                 StringUtils.parseFloat(raw.vitD100g()),
                 StringUtils.parseFloat(raw.vitE100g()),
                 StringUtils.parseFloat(raw.vitC100g()),
+                StringUtils.parseFloat(raw.vitK100g()),
                 StringUtils.parseFloat(raw.vitB1100g()),
                 StringUtils.parseFloat(raw.vitB2100g()),
                 StringUtils.parseFloat(raw.vitPP100g()),
@@ -244,92 +258,155 @@ public class ProduitServiceImpl implements ProduitService{
 
                 marque,
                 categorie,
-                ingredients,
-                allergenes,
-                additifs
+                ingredientsIds,
+                allergenesIds,
+                additifsIds
         );
     }
 
     @Override
-    public List<Produit> findTopByBrand(String brand, int limit) {
+    public Set<ProduitDTO> findTopByBrand(String brand, int limit) {
         Optional<Marque> marque = marqueRepository.findByNomIgnoreCase(brand);
-        if (marque.isEmpty()) return List.of();
-        return produitRepository.findByMarque_Id(marque.get().getId(), PageRequest.of(0, limit));
+        if (marque.isEmpty()) return Set.of();
+        List<Produit> produits = produitRepository.findByMarque_Id(
+                marque.get().getId(), PageRequest.of(0, limit));
+
+        // Préparer les maps pour lookup rapide par ID
+        Map<String, Ingredient> ingredientMap = ingredientRepository.findAll().stream()
+                .collect(Collectors.toMap(Ingredient::getId, Function.identity()));
+        Map<String, Additif> additifMap = additifRepository.findAll().stream()
+                .collect(Collectors.toMap(Additif::getId, Function.identity()));
+        Map<String, Allergene> allergeneMap = allergeneRepository.findAll().stream()
+                .collect(Collectors.toMap(Allergene::getId, Function.identity()));
+
+        return produits.stream()
+                .map(p -> ProduitDTOMapper.toDto(p, ingredientMap, additifMap, allergeneMap))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public List<Produit> findTopByCategory(String category, int limit) {
-        Optional<Categorie> categorie = categorieRepository.findByNomIgnoreCase(category);
-        if (categorie.isEmpty()) return List.of();
-        return produitRepository.findByCategorie_Id(categorie.get().getId(), PageRequest.of(0, limit));
+    public Set<ProduitDTO> findTopByCategory(String category, int limit) {
+        String cleanCategory = category == null ? "" : category.trim();
+
+
+        Optional<Categorie> categorie = categorieRepository.findByNomIgnoreCase(cleanCategory);
+        if (categorie.isEmpty()) {
+            log.error("Catégorie non trouvée pour '{}'", cleanCategory);
+            return Set.of();
+        }
+
+        List<Produit> produits = produitRepository.findByCategorie_Id(
+                categorie.get().getId(), PageRequest.of(0, limit));
+
+        // Préparer les maps pour lookup rapide par ID
+        Map<String, Ingredient> ingredientMap = ingredientRepository.findAll().stream()
+                .collect(Collectors.toMap(Ingredient::getId, Function.identity()));
+        Map<String, Additif> additifMap = additifRepository.findAll().stream()
+                .collect(Collectors.toMap(Additif::getId, Function.identity()));
+        Map<String, Allergene> allergeneMap = allergeneRepository.findAll().stream()
+                .collect(Collectors.toMap(Allergene::getId, Function.identity()));
+
+        return  produits.stream()
+                .map(p -> ProduitDTOMapper.toDto(p, ingredientMap, additifMap, allergeneMap))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public List<Produit> findTopByBrandAndCategory(String brand, String category, int limit) {
+    public Set<ProduitDTO> findTopByBrandAndCategory(String brand, String category, int limit) {
         Optional<Marque> marque = marqueRepository.findByNomIgnoreCase(brand);
         Optional<Categorie> categorie = categorieRepository.findByNomIgnoreCase(category);
-        if (marque.isEmpty() || categorie.isEmpty()) return List.of();
-        return produitRepository.findByMarque_IdAndCategorie_Id(marque.get().getId(), categorie.get().getId(), PageRequest.of(0, limit));
+        if (marque.isEmpty() || categorie.isEmpty()) return Set.of();
+
+        List<Produit> produits = produitRepository.findByMarque_IdAndCategorie_Id(marque.get().getId(), categorie.get().getId(), PageRequest.of(0, limit));
+
+
+        // Préparer les maps pour lookup rapide par ID
+        Map<String, Ingredient> ingredientMap = ingredientRepository.findAll().stream()
+                .collect(Collectors.toMap(Ingredient::getId, Function.identity()));
+        Map<String, Additif> additifMap = additifRepository.findAll().stream()
+                .collect(Collectors.toMap(Additif::getId, Function.identity()));
+        Map<String, Allergene> allergeneMap = allergeneRepository.findAll().stream()
+                .collect(Collectors.toMap(Allergene::getId, Function.identity()));
+
+        return  produits.stream()
+                .map(p -> ProduitDTOMapper.toDto(p, ingredientMap, additifMap, allergeneMap))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public List<Ingredient> findTopIngredients(int limit) {
+    public List<IngredientDTO> findTopIngredients(int limit) {
         Aggregation agg = Aggregation.newAggregation(
                 Aggregation.unwind("ingredients"),
-                Aggregation.group("ingredients").count().as("count"),
-                Aggregation.sort(Sort.Direction.DESC, "count"),
+                Aggregation.group("ingredients").count().as("nbUtilisations"),
+                Aggregation.sort(Sort.by(Sort.Direction.DESC, "nbUtilisations")),
                 Aggregation.limit(limit),
-                Aggregation.project("_id")
+                Aggregation.lookup("ingredients", "_id", "_id", "ingredient"),
+                Aggregation.unwind("ingredient"),
+                Aggregation.project()
+                        .and("ingredient.nom").as("nom")
+                        .and("nbUtilisations").as("nbUtilisations")
         );
+
         AggregationResults<Document> results = mongoTemplate.aggregate(agg, "produits", Document.class);
-        List<String> ingredientIds = results.getMappedResults().stream()
-            .map(doc -> {
-                Object ref = doc.get("_id");
-                if (ref instanceof DBRef) {
-                    return ((DBRef) ref).getId().toString();
-                } else if (ref instanceof String) {
-                    return (String) ref;
-                } else {
-                    return ref != null ? ref.toString() : null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .toList();
-        List<Ingredient> ingredients = ingredientRepository.findAllById(ingredientIds);
-        Map<String, Ingredient> ingredientMap = ingredients.stream().collect(Collectors.toMap(Ingredient::getId, i -> i));
-        return ingredientIds.stream().map(ingredientMap::get).filter(Objects::nonNull).toList();
+
+        return results.getMappedResults().stream()
+                .map(doc -> new IngredientDTO(
+                        doc.getString("nom"),
+                        doc.getInteger("nbUtilisations")
+                ))
+                .toList();
     }
 
     @Override
-    public List<Allergene> findTopAllergenes(int limit) {
+    public List<AllergeneDTO> findTopAllergenes(int limit) {
+
         Aggregation agg = Aggregation.newAggregation(
                 Aggregation.unwind("allergenes"),
-                Aggregation.group("allergenes").count().as("count"),
-                Aggregation.sort(Sort.Direction.DESC, "count"),
+                Aggregation.group("allergenes").count().as("nbUtilisations"),
+                Aggregation.sort(Sort.by(Sort.Direction.DESC, "nbUtilisations")),
                 Aggregation.limit(limit),
-                Aggregation.project("_id")
+                Aggregation.lookup("allergenes", "_id", "_id", "allergene"),
+                Aggregation.unwind("allergene"),
+                Aggregation.project()
+                        .and("allergene.nom").as("nom")
+                        .and("nbUtilisations").as("nbUtilisations")
         );
+
         AggregationResults<Document> results = mongoTemplate.aggregate(agg, "produits", Document.class);
-        List<String> allergeneIds = results.getMappedResults().stream()
-            .map(doc -> {
-                Object ref = doc.get("_id");
-                if (ref instanceof DBRef) {
-                    return ((DBRef) ref).getId().toString();
-                } else if (ref instanceof String) {
-                    return (String) ref;
-                } else {
-                    return ref != null ? ref.toString() : null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .toList();
-        List<Allergene> allergenes = allergeneRepository.findAllById(allergeneIds);
-        Map<String, Allergene> allergeneMap = allergenes.stream().collect(Collectors.toMap(Allergene::getId, a -> a));
-        return allergeneIds.stream().map(allergeneMap::get).filter(Objects::nonNull).toList();
+
+        return results.getMappedResults().stream()
+                .map(doc -> new AllergeneDTO(
+                        doc.getString("nom"),
+                        doc.getInteger("nbUtilisations")
+                ))
+                .toList();
     }
 
+
     @Override
-    public List<Additif> findTopAdditifs(int limit) {
-       
+    public List<AdditifDTO> findTopAdditifs(int limit) {
+
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.unwind("additifs"),
+                Aggregation.group("additifs").count().as("nbUtilisations"),
+                Aggregation.sort(Sort.by(Sort.Direction.DESC, "nbUtilisations")),
+                Aggregation.limit(limit),
+                Aggregation.lookup("additifs", "_id", "_id", "additif"),
+                Aggregation.unwind("additif"),
+                Aggregation.project()
+                        .and("additif.nom").as("nom")
+                        .and("additif.code").as("code")
+                        .and("nbUtilisations").as("nbUtilisations")
+        );
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(agg, "produits", Document.class);
+
+        return results.getMappedResults().stream()
+                .map(doc -> new AdditifDTO(
+                        doc.getString("nom"),
+                        doc.getString("code"),
+                        doc.getInteger("nbUtilisations")
+                ))
+                .toList();
     }
 }

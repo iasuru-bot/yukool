@@ -8,6 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+/**
+ * Categorie
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,5 +20,6 @@ public class Categorie {
     @Id
     private String id;
 
+    /** nom d'une categorie*/
     private String nom;
 }

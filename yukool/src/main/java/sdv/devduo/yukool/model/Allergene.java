@@ -8,6 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+/**
+ * Allergene
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,6 +19,7 @@ public class Allergene {
     @Id
     private String id;
 
+    /** nom allergene */
     private String nom;
 
 }

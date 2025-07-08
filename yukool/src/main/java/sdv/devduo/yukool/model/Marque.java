@@ -8,6 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+/**
+ * Marque
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,5 +20,6 @@ public class Marque {
     @Id
     private String id;
 
+    /** nom d'une marque*/
     private String nom;
 }

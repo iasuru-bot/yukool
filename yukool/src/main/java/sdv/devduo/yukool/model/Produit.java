@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.UUID;
 
+/** Le produit */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +19,10 @@ public class Produit {
     @Id
     private String id;
 
+    /** nom du produit*/
     private String nom;
+
+    /** infos sur le produit*/
     private NutritionGradeFr nutriScore;
 
     private Float energie100g;
@@ -32,6 +36,7 @@ public class Produit {
     private Float vitD100g;
     private Float vitE100g;
     private Float vitC100g;
+    private Float vitK100g;
     private Float vitB1100g;
     private Float vitB2100g;
     private Float vitPP100g;
@@ -47,18 +52,20 @@ public class Produit {
 
     private Boolean presenceHuilePalme;
 
+    /** la marque du produit*/
     @DBRef
     private Marque marque;
 
+    /** la categorie du produit*/
     @DBRef
     private Categorie categorie;
 
-    @DBRef
-    private List<Ingredient> ingredients;
+    /** la liste des ingredients du produit*/
+    private List<String> ingredients;
 
-    @DBRef
-    private List<Allergene> allergenes;
+    /** la liste des allergenes du produit*/
+    private List<String> allergenes;
 
-    @DBRef
-    private List<Additif> additifs;
+    /** la liste des additifs du produit*/
+    private List<String> additifs;
 }

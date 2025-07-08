@@ -1,5 +1,6 @@
 package sdv.devduo.yukool.model;
 
+/** Enum de nutrition*/
 public enum NutritionGradeFr {
     A("a"),
     B("b"),
@@ -8,14 +9,11 @@ public enum NutritionGradeFr {
     E("e"),
     F("f");
 
+    /** La valeur de la nutrition*/
     private final String value;
 
     NutritionGradeFr(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public static NutritionGradeFr fromString(String grade) {

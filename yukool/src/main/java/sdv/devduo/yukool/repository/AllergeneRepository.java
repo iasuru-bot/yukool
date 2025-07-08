@@ -6,7 +6,9 @@ import sdv.devduo.yukool.model.Allergene;
 
 import java.util.Optional;
 
+/**
+ * Repository pour l'entité {@link Allergene}
+ */
 @Repository
 public interface AllergeneRepository extends MongoRepository<Allergene, String> {
-    Optional<Allergene> findByNom(String nom);
 }

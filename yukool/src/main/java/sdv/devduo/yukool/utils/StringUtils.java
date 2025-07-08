@@ -1,41 +1,25 @@
 package sdv.devduo.yukool.utils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
 
 /**
- *
+ * Classe utilitaire pour aider à gerer les strings
  */
 public  class StringUtils {
 
-    /**
-     *
-     * @param s
-     * @param sep
-     * @return
-     */
-    static public List<String> parseList(String s, String sep) {
-        if (s == null || s.isBlank()) return List.of();
-        return Arrays.stream(s.split(sep))
-                .map(String::trim)
-                .filter(e -> !e.isBlank())
-                .toList();
-    }
 
     /**
-     *
-     * @param s
-     * @return
+     * transforme un string en float
+     * @param s string a parser
+     * @return retourne un float ou null si echec
      */
     static public Float parseFloat(String s) {
         try { return (s == null || s.isBlank()) ? null : Float.parseFloat(s.replace(",", ".")); } catch (Exception e) { return null; }
     }
 
     /**
-     *
-     * @param s
-     * @return
+     * fonction qui permet de vérifier si la valeur est vrai ou faux en fonction du string entrée
+     * @param s String a vérifier
+     * @return vrai ou faux en fonction de l'entrée
      */
     static public Boolean parseBoolean(String s) {
         if (s == null) return null;
@@ -44,9 +28,9 @@ public  class StringUtils {
     }
 
     /**
-     *
-     * @param s
-     * @return
+     * Permet de nettoyer une string en enlevant les caractères spéciaux
+     * @param s String a nettoyer
+     * @return Une String nettoyer en minuscule
      */
     static public String cleanString(String s) {
         if (s == null) return null;

@@ -8,7 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
-
+/**
+ * Un additif
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +20,21 @@ public class Additif {
     @Id
     private String id;
 
+    /** nom de l'additif */
     private String nom;
 
+    /** code de l'additif */
     private String code;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Additif additif)) return false;
+        return code != null && code.equalsIgnoreCase(additif.code);
+    }
+
+    @Override
+    public int hashCode() {
+        return code == null ? 0 : code.toLowerCase().hashCode();
+    }
 }
