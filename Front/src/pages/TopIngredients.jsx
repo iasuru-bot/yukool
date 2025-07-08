@@ -25,9 +25,6 @@ function TopIngredients({ limit = 10 }) {
     <Container maxWidth="sm" sx={{ pb: { xs: 8, sm: 2 }, pt: { xs: 2, sm: 4 }, minHeight: '100vh' }}>
       <Typography variant="h5" fontWeight={700} mt={1} mb={1} sx={{ fontSize: { xs: '1.7rem', sm: '2rem' }, letterSpacing: -1, textAlign: 'center' }}>Ingredients</Typography>
       <Box display="flex" alignItems="center" mb={2}>
-        <Button startIcon={<FilterListIcon />} variant="outlined" sx={{ color: '#5B5BFF', borderColor: '#5B5BFF', fontWeight: 700, bgcolor: 'rgba(91,91,255,0.06)', borderRadius: 2, px: 2, textTransform: 'none', '&:hover': { bgcolor: 'rgba(91,91,255,0.12)' } }}>
-          Filters
-        </Button>
       </Box>
       {loading && <Box display="flex" justifyContent="center" my={4}><CircularProgress /></Box>}
       {error && <Alert severity="error">{error}</Alert>}
@@ -39,11 +36,10 @@ function TopIngredients({ limit = 10 }) {
                 <SpaIcon />
               </Avatar>
               <Box flex={1} minWidth={0}>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '1.08rem', sm: '1.18rem' }, color: '#222' }}>{ingredient.name}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>{ingredient.description}</Typography>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '1.08rem', sm: '1.18rem' }, color: '#222' }}>{ingredient.nom}</Typography>
               </Box>
               <Box textAlign="right" ml={2}>
-                <Avatar sx={{ bgcolor: '#e8f5e9', color: '#43a047', width: { xs: 32, sm: 38 }, height: { xs: 32, sm: 38 }, fontWeight: 700, fontSize: { xs: 15, sm: 18 } }}>{ingredient.count}</Avatar>
+                <Avatar sx={{ bgcolor: '#e8f5e9', color: '#43a047', width: { xs: 32, sm: 38 }, height: { xs: 32, sm: 38 }, fontWeight: 700, fontSize: { xs: 15, sm: 18 } }}>{ingredient.nbUtilisations}</Avatar>
               </Box>
             </CardContent>
           </Card>

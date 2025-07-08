@@ -25,25 +25,22 @@ function TopAllergens({ limit = 10 }) {
     <Container maxWidth="sm" sx={{ pb: { xs: 8, sm: 2 }, pt: { xs: 2, sm: 4 }, minHeight: '100vh' }}>
       <Typography variant="h5" fontWeight={700} mt={1} mb={1} sx={{ fontSize: { xs: '1.7rem', sm: '2rem' }, letterSpacing: -1, textAlign: 'center' }}>Allergenes</Typography>
       <Box display="flex" alignItems="center" mb={2}>
-        <Button startIcon={<FilterListIcon />} variant="outlined" sx={{ color: '#5B5BFF', borderColor: '#5B5BFF', fontWeight: 700, bgcolor: 'rgba(91,91,255,0.06)', borderRadius: 2, px: 2, textTransform: 'none', '&:hover': { bgcolor: 'rgba(91,91,255,0.12)' } }}>
-          Filters
-        </Button>
+
       </Box>
       {loading && <Box display="flex" justifyContent="center" my={4}><CircularProgress /></Box>}
       {error && <Alert severity="error">{error}</Alert>}
       <Stack spacing={2} sx={{ maxHeight: { xs: 'calc(100vh - 220px)', sm: 'none' }, overflowY: { xs: 'auto', sm: 'visible' } }}>
         {!loading && !error && allergens.map((allergen) => (
-          <Card key={allergen.id || allergen.name} sx={{ borderRadius: 4, background: '#fff', boxShadow: '0 2px 12px 0 rgba(91,91,255,0.07)', px: 1, transition: 'box-shadow 0.2s', '&:active': { boxShadow: '0 4px 16px 0 rgba(91,91,255,0.15)' }, '&:hover': { boxShadow: '0 4px 16px 0 rgba(91,91,255,0.12)' } }}>
+          <Card key={allergen.id || allergen.nom} sx={{ borderRadius: 4, background: '#fff', boxShadow: '0 2px 12px 0 rgba(91,91,255,0.07)', px: 1, transition: 'box-shadow 0.2s', '&:active': { boxShadow: '0 4px 16px 0 rgba(91,91,255,0.15)' }, '&:hover': { boxShadow: '0 4px 16px 0 rgba(91,91,255,0.12)' } }}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', p: { xs: 1.2, sm: 2 } }}>
               <Avatar sx={{ bgcolor: '#fff3e0', color: '#ff9800', mr: 2, width: { xs: 44, sm: 56 }, height: { xs: 44, sm: 56 } }}>
                 <WarningAmberIcon />
               </Avatar>
               <Box flex={1} minWidth={0}>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '1.08rem', sm: '1.18rem' }, color: '#222' }}>{allergen.name}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>{allergen.description}</Typography>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '1.08rem', sm: '1.18rem' }, color: '#222' }}>{allergen.nom}</Typography>
               </Box>
               <Box textAlign="right" ml={2}>
-                <Avatar sx={{ bgcolor: '#e8f5e9', color: '#43a047', width: { xs: 32, sm: 38 }, height: { xs: 32, sm: 38 }, fontWeight: 700, fontSize: { xs: 15, sm: 18 } }}>{allergen.count}</Avatar>
+                <Avatar sx={{ bgcolor: '#e8f5e9', color: '#43a047', width: { xs: 32, sm: 38 }, height: { xs: 32, sm: 38 }, fontWeight: 700, fontSize: { xs: 15, sm: 18 } }}>{allergen.nbUtilisations}</Avatar>
               </Box>
             </CardContent>
           </Card>

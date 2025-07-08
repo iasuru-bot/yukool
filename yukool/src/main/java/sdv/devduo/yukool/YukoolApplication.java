@@ -34,13 +34,13 @@ public class YukoolApplication implements CommandLineRunner  {
 
 		long startTime = System.currentTimeMillis();
 		String csvPath = "data/open-food-facts.csv";
-//		List<ProduitRaw> produitRawsList = CsvDataReader.readCsv(csvPath);
+		List<ProduitRaw> produitRawsList = CsvDataReader.readCsv(csvPath);
 
 		long endParseTime = System.currentTimeMillis();
 		System.out.println("Temps d'execution du parse : " + (endParseTime - startTime) + " ms");
 
 		//transforme
-//		produitService.saveAllProduit(produitRawsList);
+		produitService.saveAllProduit(produitRawsList);
 
 		long endTime = System.currentTimeMillis();
 		System.out.println("Temps d'execution : " + (endTime - startTime) + " ms");
